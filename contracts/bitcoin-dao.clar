@@ -280,3 +280,43 @@
         (ok true)
     )
 )
+
+;; Governance Parameter Functions
+(define-public (update-dao-parameters (new-params {
+    proposal-fee: uint,
+    min-proposal-amount: uint,
+    max-proposal-amount: uint,
+    voting-delay: uint,
+    voting-period: uint,
+    timelock-period: uint,
+    quorum-threshold: uint,
+    super-majority: uint
+}))
+    (begin
+        (asserts! (is-eq tx-sender (var-get dao-admin)) ERR-NOT-AUTHORIZED)
+        (asserts! (validate-parameters new-params) ERR-INVALID-PARAMETER)
+        (var-set dao-parameters new-params)
+        (ok true)
+    )
+)
+
+;; Read-Only Functions
+(define-read-only (get-member-info (member principal))
+    (map-get? members member)
+)
+
+(define-read-only (get-proposal-by-id (proposal-id uint))
+    (map-get? proposals proposal-id)
+)
+
+(define-read-only (get-vote (proposal-id uint) (voter principal))
+    (map-get? votes {proposal-id: proposal-id, voter: voter})
+)
+
+(define-read-only (get-delegation (member principal))
+    (map-get? delegations member)
+)
+
+(define-read-only (get-return-pool (pool-id uint))
+    (map-get? return-pools pool-id)
+)
