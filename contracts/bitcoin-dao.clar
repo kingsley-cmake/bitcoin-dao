@@ -67,3 +67,51 @@
         last-withdrawal: uint
     }
 )
+
+(define-map proposals 
+    uint 
+    {
+        id: uint,
+        proposer: principal,
+        title: (string-ascii 100),
+        description: (string-utf8 1000),
+        amount: uint,
+        target: principal,
+        start-block: uint,
+        end-block: uint,
+        yes-votes: uint,
+        no-votes: uint,
+        status: (string-ascii 20),
+        executed: bool
+    }
+)
+
+(define-map votes 
+    {proposal-id: uint, voter: principal} 
+    {
+        amount: uint,
+        support: bool
+    }
+)
+
+(define-map emergency-admins principal bool)
+
+(define-map delegations
+    principal
+    {
+        delegate: principal,
+        amount: uint,
+        expiry: uint
+    }
+)
+
+(define-map return-pools
+    uint
+    {
+        total-amount: uint,
+        distributed-amount: uint,
+        distribution-start: uint,
+        distribution-end: uint,
+        claims: (list 200 principal)
+    }
+)
