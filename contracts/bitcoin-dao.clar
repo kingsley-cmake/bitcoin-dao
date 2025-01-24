@@ -115,3 +115,62 @@
         claims: (list 200 principal)
     }
 )
+
+(define-map member-claims
+    {member: principal, pool-id: uint}
+    {
+        amount: uint,
+        claimed: bool
+    }
+)
+
+;; Public Functions
+
+;; Emergency Control Functions
+(define-public (set-emergency-state (state bool))
+    (begin
+        (asserts! (is-emergency-admin tx-sender) ERR-NOT-AUTHORIZED)
+        (var-set emergency-state state)
+        (ok true)
+    )
+)
+
+(define-public (add-emergency-admin (admin principal))
+    (begin
+        (asserts! (is-eq tx-sender (var-get dao-admin)) ERR-NOT-AUTHORIZED)
+        (asserts! (not (is-eq admin (as-contract tx-sender))) ERR-INVALID-PARAMETER)
+        (map-set emergency-admins admin true)
+        (ok true)
+    )
+)
+
+;; Delegation Functions
+(define-public (delegate-votes (delegate-to principal) (amount uint) (expiry uint))
+    (let
+        (
+            (caller tx-sender)
+            (member-info (unwrap! (get-member-info caller) ERR-NOT-AUTHORIZED))
+        )
+        (asserts! (not (is-eq delegate-to caller)) ERR-INVALID-DELEGATE)
+        (asserts! (is-some (get-member-info delegate-to)) ERR-INVALID-DELEGATE)
+        (asserts! (>= (get voting-power member-info) amount) ERR-INSUFFICIENT-FUNDS)
+        (asserts! (> expiry block-height) ERR-INVALID-PARAMETER)
+        
+        (map-set delegations
+            caller
+            {
+                delegate: delegate-to,
+                amount: amount,
+                expiry: expiry
+            }
+        )
+        
+        (map-set members
+            caller
+            (merge member-info {
+                voting-power: (- (get voting-power member-info) amount)
+            })
+        )
+        (ok true)
+    )
+)
