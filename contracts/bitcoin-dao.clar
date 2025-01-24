@@ -138,7 +138,7 @@
 (define-public (add-emergency-admin (admin principal))
     (begin
         (asserts! (is-eq tx-sender (var-get dao-admin)) ERR-NOT-AUTHORIZED)
-        (asserts! (not (is-eq admin (as-contract tx-sender))) ERR-INVALID-PARAMETER)
+        (asserts! (not (is-eq admin tx-sender)) ERR-INVALID-PARAMETER)
         (map-set emergency-admins admin true)
         (ok true)
     )
@@ -154,7 +154,7 @@
         (asserts! (not (is-eq delegate-to caller)) ERR-INVALID-DELEGATE)
         (asserts! (is-some (get-member-info delegate-to)) ERR-INVALID-DELEGATE)
         (asserts! (>= (get voting-power member-info) amount) ERR-INSUFFICIENT-FUNDS)
-        (asserts! (> expiry block-height) ERR-INVALID-PARAMETER)
+        (asserts! (>= expiry stacks-block-height) ERR-INVALID-PARAMETER)
         
         (map-set delegations
             caller
@@ -184,10 +184,10 @@
     (let
         (
             (caller tx-sender)
-            (current-block block-height)
+            (current-block-height stacks-block-height)
             (proposal-id (+ (var-get proposal-count) u1))
             (params (var-get dao-parameters))
-            (end-block (+ current-block (get voting-period params)))
+            (end-block (+ current-block-height (get voting-period params)))
         )
         (asserts! (not (is-eq target (as-contract tx-sender))) ERR-INVALID-PARAMETER)
         (asserts! (> (len title) u0) ERR-INVALID-PARAMETER)
@@ -208,7 +208,7 @@
                 description: description,
                 amount: amount,
                 target: target,
-                start-block: (+ current-block (get voting-delay params)),
+                start-block: (+ current-block-height (get voting-delay params)),
                 end-block: end-block,
                 yes-votes: u0,
                 no-votes: u0,
@@ -237,8 +237,8 @@
             {
                 total-amount: total-amount,
                 distributed-amount: u0,
-                distribution-start: block-height,
-                distribution-end: (+ block-height (get timelock-period (var-get dao-parameters))),
+                distribution-start: stacks-block-height,
+                distribution-end: (+ stacks-block-height (get timelock-period (var-get dao-parameters))),
                 claims: (list)
             }
         )
@@ -365,6 +365,7 @@
     (and
         (< (get min-proposal-amount params) (get max-proposal-amount params))
         (<= (get quorum-threshold params) u1000)
+        (<= (get super-majority params) u1000)
         (<= (get super-majority params) u1000)
         (> (get voting-period params) (get voting-delay params))
     )
